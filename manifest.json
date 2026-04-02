@@ -1,0 +1,10 @@
+[
+	{
+		"category": "Metadata",
+		"guid": "c0e51a88-71a0-4f5c-82dc-81b8ae1a3e0f",
+		"name": "SponsorBlock",
+		"description": "Skip sponsored segments in YouTube videos using SponsorBlock data.",
+		"owner": "felixfoertsch",
+		"versions": []
+	}
+]

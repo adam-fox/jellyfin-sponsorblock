@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>SponsorBlock</title>
+</head>
+<body>
+	<div id="SponsorBlockConfigPage" data-role="page" class="page type-interior pluginConfigurationPage"
+		data-require="emby-input,emby-button,emby-select,emby-checkbox">
+		<div data-role="content">
+			<div class="content-primary">
+				<h2>SponsorBlock Settings</h2>
+
+				<div class="verticalSection">
+					<h3>File Matching</h3>
+					<div class="selectContainer">
+						<label class="selectLabel" for="FileMatchingMode">File Matching Mode</label>
+						<select id="FileMatchingMode" is="emby-select">
+							<option value="YouTubeIdAsFilename">YouTube ID as Filename (e.g., 4pG8_bWpmaE.mp4)</option>
+							<option value="CustomRegex">Custom Regex</option>
+						</select>
+					</div>
+					<div id="CustomRegexContainer" class="inputContainer" style="display: none;">
+						<label class="inputLabel" for="CustomRegexPattern">Custom Regex Pattern</label>
+						<input id="CustomRegexPattern" type="text" is="emby-input" />
+						<div class="fieldDescription">
+							Must contain one capture group for the YouTube video ID.
+							Default: <code>\[([a-zA-Z0-9_-]{11})\]</code> — matches [videoID] in filenames.
+						</div>
+					</div>
+				</div>
+
+				<div class="verticalSection">
+					<h3>Categories to Skip</h3>
+					<div class="checkboxContainer">
+						<label class="emby-checkbox-label">
+							<input id="Sponsor" type="checkbox" is="emby-checkbox" />
+							<span>Sponsor</span>
+						</label>
+						<div class="fieldDescription">Paid promotional content</div>
+					</div>
+					<div class="checkboxContainer">
+						<label class="emby-checkbox-label">
+							<input id="SelfPromo" type="checkbox" is="emby-checkbox" />
+							<span>Self-Promotion</span>
+						</label>
+						<div class="fieldDescription">Creator's own products, merch, or services</div>
+					</div>
+					<div class="checkboxContainer">
+						<label class="emby-checkbox-label">
+							<input id="Interaction" type="checkbox" is="emby-checkbox" />
+							<span>Interaction Reminder</span>
+						</label>
+						<div class="fieldDescription">"Like, subscribe, comment" reminders</div>
+					</div>
+					<div class="checkboxContainer">
+						<label class="emby-checkbox-label">
+							<input id="Intro" type="checkbox" is="emby-checkbox" />
+							<span>Intro</span>
+						</label>
+						<div class="fieldDescription">Repeating intro animation or sequence</div>
+					</div>
+					<div class="checkboxContainer">
+						<label class="emby-checkbox-label">
+							<input id="Outro" type="checkbox" is="emby-checkbox" />
+							<span>Outro</span>
+						</label>
+						<div class="fieldDescription">Endcards and credits</div>
+					</div>
+					<div class="checkboxContainer">
+						<label class="emby-checkbox-label">
+							<input id="Preview" type="checkbox" is="emby-checkbox" />
+							<span>Preview</span>
+						</label>
+						<div class="fieldDescription">Clips previewing upcoming content</div>
+					</div>
+					<div class="checkboxContainer">
+						<label class="emby-checkbox-label">
+							<input id="Filler" type="checkbox" is="emby-checkbox" />
+							<span>Filler</span>
+						</label>
+						<div class="fieldDescription">Tangential content, jokes, or padding</div>
+					</div>
+					<div class="checkboxContainer">
+						<label class="emby-checkbox-label">
+							<input id="MusicOfftopic" type="checkbox" is="emby-checkbox" />
+							<span>Non-Music in Music Videos</span>
+						</label>
+						<div class="fieldDescription">Non-music sections in music-focused videos</div>
+					</div>
+				</div>
+
+				<div>
+					<button is="emby-button" type="button" class="raised button-submit block emby-button"
+						onclick="SponsorBlockConfig.save()">
+						<span>Save</span>
+					</button>
+				</div>
+
+				<div class="verticalSection" style="margin-top: 2em;">
+					<h3>User Segment Actions</h3>
+					<div class="fieldDescription" style="margin-bottom: 1em;">
+						Control how each user's player handles media segments.
+						"Default" restores Jellyfin defaults (Intro/Outro: Ask to Skip, others: None).
+					</div>
+					<table id="UserSegmentTable" style="width:100%; border-collapse:collapse;">
+						<thead>
+							<tr>
+								<th style="text-align:left; padding:0.5em;">User</th>
+								<th style="text-align:center; padding:0.5em;">Current</th>
+								<th style="text-align:center; padding:0.5em;">Default</th>
+								<th style="text-align:center; padding:0.5em;">Ask to Skip</th>
+								<th style="text-align:center; padding:0.5em;">Auto Skip</th>
+							</tr>
+						</thead>
+						<tbody id="UserSegmentFoot"></tbody>
+						<tbody id="UserSegmentBody"></tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+
+		<script type="text/javascript">
+			var SEGMENT_KEYS = [
+				'segmentTypeAction__Intro',
+				'segmentTypeAction__Outro',
+				'segmentTypeAction__Commercial',
+				'segmentTypeAction__Preview',
+				'segmentTypeAction__Recap'
+			];
+
+			var DEFAULTS = {
+				'segmentTypeAction__Intro': 'AskToSkip',
+				'segmentTypeAction__Outro': 'AskToSkip',
+				'segmentTypeAction__Commercial': 'None',
+				'segmentTypeAction__Preview': 'None',
+				'segmentTypeAction__Recap': 'None'
+			};
+
+			function createButton(label, onclick) {
+				var btn = document.createElement('button');
+				btn.setAttribute('is', 'emby-button');
+				btn.setAttribute('type', 'button');
+				btn.className = 'raised emby-button';
+				btn.addEventListener('click', onclick);
+				var span = document.createElement('span');
+				span.textContent = label;
+				btn.appendChild(span);
+				return btn;
+			}
+
+			function createCell(align) {
+				var td = document.createElement('td');
+				td.style.padding = '0.5em';
+				if (align) td.style.textAlign = align;
+				return td;
+			}
+
+			var SponsorBlockConfig = {
+				pluginUniqueId: 'c0e51a88-71a0-4f5c-82dc-81b8ae1a3e0f',
+				users: [],
+
+				load: function () {
+					Dashboard.showLoadingMsg();
+					ApiClient.getPluginConfiguration(this.pluginUniqueId).then(function (config) {
+						document.getElementById('FileMatchingMode').value = config.FileMatchingMode;
+						document.getElementById('CustomRegexPattern').value = config.CustomRegexPattern;
+						document.getElementById('Sponsor').checked = config.Sponsor;
+						document.getElementById('SelfPromo').checked = config.SelfPromo;
+						document.getElementById('Interaction').checked = config.Interaction;
+						document.getElementById('Intro').checked = config.Intro;
+						document.getElementById('Outro').checked = config.Outro;
+						document.getElementById('Preview').checked = config.Preview;
+						document.getElementById('Filler').checked = config.Filler;
+						document.getElementById('MusicOfftopic').checked = config.MusicOfftopic;
+						SponsorBlockConfig.toggleRegexField();
+						SponsorBlockConfig.loadUsers();
+					});
+				},
+
+				save: function () {
+					Dashboard.showLoadingMsg();
+					ApiClient.getPluginConfiguration(this.pluginUniqueId).then(function (config) {
+						config.FileMatchingMode = document.getElementById('FileMatchingMode').value;
+						config.CustomRegexPattern = document.getElementById('CustomRegexPattern').value;
+						config.Sponsor = document.getElementById('Sponsor').checked;
+						config.SelfPromo = document.getElementById('SelfPromo').checked;
+						config.Interaction = document.getElementById('Interaction').checked;
+						config.Intro = document.getElementById('Intro').checked;
+						config.Outro = document.getElementById('Outro').checked;
+						config.Preview = document.getElementById('Preview').checked;
+						config.Filler = document.getElementById('Filler').checked;
+						config.MusicOfftopic = document.getElementById('MusicOfftopic').checked;
+						ApiClient.updatePluginConfiguration(SponsorBlockConfig.pluginUniqueId, config).then(function () {
+							Dashboard.processPluginConfigurationUpdateResult();
+						});
+					});
+				},
+
+				toggleRegexField: function () {
+					var mode = document.getElementById('FileMatchingMode').value;
+					document.getElementById('CustomRegexContainer').style.display =
+						mode === 'CustomRegex' ? '' : 'none';
+				},
+
+				loadUsers: function () {
+					ApiClient.getUsers().then(function (users) {
+						SponsorBlockConfig.users = users;
+						SponsorBlockConfig.loadAllUserPrefs();
+					});
+				},
+
+				loadAllUserPrefs: function () {
+					var promises = this.users.map(function (user) {
+						return ApiClient.getDisplayPreferences('usersettings', user.Id, 'emby')
+							.then(function (prefs) { return { user: user, prefs: prefs }; });
+					});
+					Promise.all(promises).then(function (results) {
+						SponsorBlockConfig.renderTable(results);
+						Dashboard.hideLoadingMsg();
+					});
+				},
+
+				getCurrentAction: function (prefs) {
+					var customPrefs = prefs.CustomPrefs || {};
+					var allSkip = SEGMENT_KEYS.every(function (key) {
+						return (customPrefs[key] || DEFAULTS[key]) === 'Skip';
+					});
+					var allAsk = SEGMENT_KEYS.every(function (key) {
+						return (customPrefs[key] || DEFAULTS[key]) === 'AskToSkip';
+					});
+					var isDefault = SEGMENT_KEYS.every(function (key) {
+						return (customPrefs[key] || DEFAULTS[key]) === DEFAULTS[key];
+					});
+					if (allSkip) return 'Auto Skip All';
+					if (allAsk) return 'Ask to Skip All';
+					if (isDefault) return 'Default';
+					return 'Custom';
+				},
+
+				renderTable: function (results) {
+					var tbody = document.getElementById('UserSegmentBody');
+					tbody.replaceChildren();
+
+					results.forEach(function (r) {
+						var tr = document.createElement('tr');
+
+						var nameCell = createCell();
+						nameCell.textContent = r.user.Name;
+						tr.appendChild(nameCell);
+
+						var currentCell = createCell('center');
+						currentCell.textContent = SponsorBlockConfig.getCurrentAction(r.prefs);
+						tr.appendChild(currentCell);
+
+						var modes = [
+							{ label: 'Default', mode: 'default' },
+							{ label: 'Ask to Skip', mode: 'ask' },
+							{ label: 'Auto Skip', mode: 'skip' }
+						];
+						modes.forEach(function (m) {
+							var td = createCell('center');
+							td.appendChild(createButton(m.label, function () {
+								SponsorBlockConfig.applyToUser(r.user.Id, m.mode);
+							}));
+							tr.appendChild(td);
+						});
+
+						tbody.appendChild(tr);
+					});
+
+					var tfoot = document.getElementById('UserSegmentFoot');
+					tfoot.replaceChildren();
+					var footRow = document.createElement('tr');
+
+					var allLabel = createCell();
+					allLabel.style.fontWeight = 'bold';
+					allLabel.textContent = 'All Users';
+					footRow.appendChild(allLabel);
+
+					footRow.appendChild(createCell());
+
+					var allModes = [
+						{ label: 'Default All', mode: 'default' },
+						{ label: 'Ask to Skip All', mode: 'ask' },
+						{ label: 'Auto Skip All', mode: 'skip' }
+					];
+					allModes.forEach(function (m) {
+						var td = createCell('center');
+						var btn = createButton(m.label, function () {
+							SponsorBlockConfig.applyToAll(m.mode);
+						});
+						btn.className = 'raised button-submit emby-button';
+						td.appendChild(btn);
+						footRow.appendChild(td);
+					});
+
+					tfoot.appendChild(footRow);
+				},
+
+				getValuesForMode: function (mode) {
+					var values = {};
+					if (mode === 'default') {
+						SEGMENT_KEYS.forEach(function (key) { values[key] = DEFAULTS[key]; });
+					} else if (mode === 'ask') {
+						SEGMENT_KEYS.forEach(function (key) { values[key] = 'AskToSkip'; });
+					} else if (mode === 'skip') {
+						SEGMENT_KEYS.forEach(function (key) { values[key] = 'Skip'; });
+					}
+					return values;
+				},
+
+				applyToUser: function (userId, mode) {
+					Dashboard.showLoadingMsg();
+					var values = this.getValuesForMode(mode);
+					ApiClient.getDisplayPreferences('usersettings', userId, 'emby').then(function (prefs) {
+						if (!prefs.CustomPrefs) prefs.CustomPrefs = {};
+						Object.keys(values).forEach(function (key) {
+							prefs.CustomPrefs[key] = values[key];
+						});
+						ApiClient.updateDisplayPreferences('usersettings', prefs, userId, 'emby').then(function () {
+							SponsorBlockConfig.loadAllUserPrefs();
+						});
+					});
+				},
+
+				applyToAll: async function (mode) {
+					Dashboard.showLoadingMsg();
+					for (var i = 0; i < this.users.length; i++) {
+						var user = this.users[i];
+						var values = this.getValuesForMode(mode);
+						var prefs = await ApiClient.getDisplayPreferences('usersettings', user.Id, 'emby');
+						if (!prefs.CustomPrefs) prefs.CustomPrefs = {};
+						Object.keys(values).forEach(function (key) {
+							prefs.CustomPrefs[key] = values[key];
+						});
+						await ApiClient.updateDisplayPreferences('usersettings', prefs, user.Id, 'emby');
+					}
+					SponsorBlockConfig.loadAllUserPrefs();
+				}
+			};
+
+			document.getElementById('FileMatchingMode')
+				.addEventListener('change', SponsorBlockConfig.toggleRegexField);
+
+			document.querySelector('#SponsorBlockConfigPage')
+				.addEventListener('pageshow', function () { SponsorBlockConfig.load(); });
+		</script>
+	</div>
+</body>
+</html>

@@ -1,0 +1,19 @@
+# mise
+.mise.local.toml
+
+# claude
+.claude/
+
+# .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.sln.iml
+.vscode/
+
+# environment
+.env
+.env.local
+.env.*.local
