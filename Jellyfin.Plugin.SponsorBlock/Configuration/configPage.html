@@ -89,75 +89,25 @@
 					</div>
 				</div>
 
+				<div class="fieldDescription" style="margin-bottom: 1em;">
+					Each user controls skip behavior per-device under
+					Settings → Playback → Media Segments. Jellyfin stores these
+					preferences in the browser's local storage, so they cannot be
+					configured centrally.
+				</div>
+
 				<div>
 					<button is="emby-button" type="button" class="raised button-submit block emby-button"
 						onclick="SponsorBlockConfig.save()">
 						<span>Save</span>
 					</button>
 				</div>
-
-				<div class="verticalSection" style="margin-top: 2em;">
-					<h3>User Segment Actions</h3>
-					<div class="fieldDescription" style="margin-bottom: 1em;">
-						Control how each user's player handles media segments.
-						"Default" restores Jellyfin defaults (Intro/Outro: Ask to Skip, others: None).
-					</div>
-					<table id="UserSegmentTable" style="width:100%; border-collapse:collapse;">
-						<thead>
-							<tr>
-								<th style="text-align:left; padding:0.5em;">User</th>
-								<th style="text-align:center; padding:0.5em;">Current</th>
-								<th style="text-align:center; padding:0.5em;">Default</th>
-								<th style="text-align:center; padding:0.5em;">Ask to Skip</th>
-								<th style="text-align:center; padding:0.5em;">Auto Skip</th>
-							</tr>
-						</thead>
-						<tbody id="UserSegmentFoot"></tbody>
-						<tbody id="UserSegmentBody"></tbody>
-					</table>
-				</div>
 			</div>
 		</div>
 
 		<script type="text/javascript">
-			var SEGMENT_KEYS = [
-				'segmentTypeAction__Intro',
-				'segmentTypeAction__Outro',
-				'segmentTypeAction__Commercial',
-				'segmentTypeAction__Preview',
-				'segmentTypeAction__Recap'
-			];
-
-			var DEFAULTS = {
-				'segmentTypeAction__Intro': 'AskToSkip',
-				'segmentTypeAction__Outro': 'AskToSkip',
-				'segmentTypeAction__Commercial': 'None',
-				'segmentTypeAction__Preview': 'None',
-				'segmentTypeAction__Recap': 'None'
-			};
-
-			function createButton(label, onclick) {
-				var btn = document.createElement('button');
-				btn.setAttribute('is', 'emby-button');
-				btn.setAttribute('type', 'button');
-				btn.className = 'raised emby-button';
-				btn.addEventListener('click', onclick);
-				var span = document.createElement('span');
-				span.textContent = label;
-				btn.appendChild(span);
-				return btn;
-			}
-
-			function createCell(align) {
-				var td = document.createElement('td');
-				td.style.padding = '0.5em';
-				if (align) td.style.textAlign = align;
-				return td;
-			}
-
 			var SponsorBlockConfig = {
 				pluginUniqueId: 'c0e51a88-71a0-4f5c-82dc-81b8ae1a3e0f',
-				users: [],
 
 				load: function () {
 					Dashboard.showLoadingMsg();
@@ -173,7 +123,7 @@
 						document.getElementById('Filler').checked = config.Filler;
 						document.getElementById('MusicOfftopic').checked = config.MusicOfftopic;
 						SponsorBlockConfig.toggleRegexField();
-						SponsorBlockConfig.loadUsers();
+						Dashboard.hideLoadingMsg();
 					});
 				},
 
@@ -200,142 +150,6 @@
 					var mode = document.getElementById('FileMatchingMode').value;
 					document.getElementById('CustomRegexContainer').style.display =
 						mode === 'CustomRegex' ? '' : 'none';
-				},
-
-				loadUsers: function () {
-					ApiClient.getUsers().then(function (users) {
-						SponsorBlockConfig.users = users;
-						SponsorBlockConfig.loadAllUserPrefs();
-					});
-				},
-
-				loadAllUserPrefs: function () {
-					var promises = this.users.map(function (user) {
-						return ApiClient.getDisplayPreferences('usersettings', user.Id, 'emby')
-							.then(function (prefs) { return { user: user, prefs: prefs }; });
-					});
-					Promise.all(promises).then(function (results) {
-						SponsorBlockConfig.renderTable(results);
-						Dashboard.hideLoadingMsg();
-					});
-				},
-
-				getCurrentAction: function (prefs) {
-					var customPrefs = prefs.CustomPrefs || {};
-					var allSkip = SEGMENT_KEYS.every(function (key) {
-						return (customPrefs[key] || DEFAULTS[key]) === 'Skip';
-					});
-					var allAsk = SEGMENT_KEYS.every(function (key) {
-						return (customPrefs[key] || DEFAULTS[key]) === 'AskToSkip';
-					});
-					var isDefault = SEGMENT_KEYS.every(function (key) {
-						return (customPrefs[key] || DEFAULTS[key]) === DEFAULTS[key];
-					});
-					if (allSkip) return 'Auto Skip All';
-					if (allAsk) return 'Ask to Skip All';
-					if (isDefault) return 'Default';
-					return 'Custom';
-				},
-
-				renderTable: function (results) {
-					var tbody = document.getElementById('UserSegmentBody');
-					tbody.replaceChildren();
-
-					results.forEach(function (r) {
-						var tr = document.createElement('tr');
-
-						var nameCell = createCell();
-						nameCell.textContent = r.user.Name;
-						tr.appendChild(nameCell);
-
-						var currentCell = createCell('center');
-						currentCell.textContent = SponsorBlockConfig.getCurrentAction(r.prefs);
-						tr.appendChild(currentCell);
-
-						var modes = [
-							{ label: 'Default', mode: 'default' },
-							{ label: 'Ask to Skip', mode: 'ask' },
-							{ label: 'Auto Skip', mode: 'skip' }
-						];
-						modes.forEach(function (m) {
-							var td = createCell('center');
-							td.appendChild(createButton(m.label, function () {
-								SponsorBlockConfig.applyToUser(r.user.Id, m.mode);
-							}));
-							tr.appendChild(td);
-						});
-
-						tbody.appendChild(tr);
-					});
-
-					var tfoot = document.getElementById('UserSegmentFoot');
-					tfoot.replaceChildren();
-					var footRow = document.createElement('tr');
-
-					var allLabel = createCell();
-					allLabel.style.fontWeight = 'bold';
-					allLabel.textContent = 'All Users';
-					footRow.appendChild(allLabel);
-
-					footRow.appendChild(createCell());
-
-					var allModes = [
-						{ label: 'Default All', mode: 'default' },
-						{ label: 'Ask to Skip All', mode: 'ask' },
-						{ label: 'Auto Skip All', mode: 'skip' }
-					];
-					allModes.forEach(function (m) {
-						var td = createCell('center');
-						var btn = createButton(m.label, function () {
-							SponsorBlockConfig.applyToAll(m.mode);
-						});
-						btn.className = 'raised button-submit emby-button';
-						td.appendChild(btn);
-						footRow.appendChild(td);
-					});
-
-					tfoot.appendChild(footRow);
-				},
-
-				getValuesForMode: function (mode) {
-					var values = {};
-					if (mode === 'default') {
-						SEGMENT_KEYS.forEach(function (key) { values[key] = DEFAULTS[key]; });
-					} else if (mode === 'ask') {
-						SEGMENT_KEYS.forEach(function (key) { values[key] = 'AskToSkip'; });
-					} else if (mode === 'skip') {
-						SEGMENT_KEYS.forEach(function (key) { values[key] = 'Skip'; });
-					}
-					return values;
-				},
-
-				applyToUser: function (userId, mode) {
-					Dashboard.showLoadingMsg();
-					var values = this.getValuesForMode(mode);
-					ApiClient.getDisplayPreferences('usersettings', userId, 'emby').then(function (prefs) {
-						if (!prefs.CustomPrefs) prefs.CustomPrefs = {};
-						Object.keys(values).forEach(function (key) {
-							prefs.CustomPrefs[key] = values[key];
-						});
-						ApiClient.updateDisplayPreferences('usersettings', prefs, userId, 'emby').then(function () {
-							SponsorBlockConfig.loadAllUserPrefs();
-						});
-					});
-				},
-
-				applyToAll: async function (mode) {
-					Dashboard.showLoadingMsg();
-					for (var i = 0; i < this.users.length; i++) {
-						var user = this.users[i];
-						var values = this.getValuesForMode(mode);
-						var prefs = await ApiClient.getDisplayPreferences('usersettings', user.Id, 'emby');
-						if (!prefs.CustomPrefs) prefs.CustomPrefs = {};
-						Object.keys(values).forEach(function (key) {
-							prefs.CustomPrefs[key] = values[key];
-						});
-						await ApiClient.updateDisplayPreferences('usersettings', prefs, user.Id, 'emby');
-					}
-					SponsorBlockConfig.loadAllUserPrefs();
 				}
 			};
 
