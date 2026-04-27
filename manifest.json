@@ -7,11 +7,11 @@
 		"owner": "felixfoertsch",
 		"versions": [
 			{
-				"version": "2026.4.27.0",
+				"version": "1.1.0.0",
 				"changelog": "Replace media-segment scan with event-driven orchestrator. Add daily refresh task at configurable hour. Add per-library scoping (empty by default — admin must opt in). SQLite per-item state machine (Pending/HasData/NoData) with 48h sanity check.",
 				"targetAbi": "10.11.0.0",
-				"sourceUrl": "https://github.com/felixfoertsch/jellyfin-sponsorblock/releases/download/v2026.4.27.0/jellyfin-plugin-sponsorblock-2026.4.27.0.zip",
-				"checksum": "85e4b63adb1797510a5b5310d61e8620",
+				"sourceUrl": "https://github.com/felixfoertsch/jellyfin-sponsorblock/releases/download/v1.1.0.0/jellyfin-plugin-sponsorblock-1.1.0.0.zip",
+				"checksum": "36788c5cf351a0598e84a870512833e8",
 				"timestamp": "2026-04-27T00:00:00Z"
 			},
 			{
