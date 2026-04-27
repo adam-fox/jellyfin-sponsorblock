@@ -138,6 +138,19 @@
 						<span>Save</span>
 					</button>
 				</div>
+
+				<div class="verticalSection" style="margin-top: 2em;">
+					<h3>Reset</h3>
+					<div class="fieldDescription" style="margin-bottom: 0.5em;">
+						Wipes the SponsorBlock state and removes all media segments owned by this plugin
+						for every item in the selected libraries above. Items are then treated as freshly
+						added — the next playback (or the next daily refresh) re-fetches segments.
+					</div>
+					<button is="emby-button" type="button" class="raised block emby-button"
+						onclick="SponsorBlockConfig.reset()">
+						<span>Reset SponsorBlock data for selected libraries</span>
+					</button>
+				</div>
 			</div>
 		</div>
 
@@ -237,6 +250,26 @@
 					var mode = document.getElementById('FileMatchingMode').value;
 					document.getElementById('CustomRegexContainer').style.display =
 						mode === 'CustomRegex' ? '' : 'none';
+				},
+
+				reset: function () {
+					if (!confirm('Wipe SponsorBlock state and owned segments for every item in the selected libraries? This cannot be undone.')) {
+						return;
+					}
+					Dashboard.showLoadingMsg();
+					ApiClient.ajax({
+						type: 'POST',
+						url: ApiClient.getUrl('Plugins/SponsorBlock/Reset'),
+						contentType: 'application/json'
+					}).then(function (response) {
+						return response.json();
+					}).then(function (result) {
+						Dashboard.hideLoadingMsg();
+						Dashboard.alert('SponsorBlock reset complete. Items processed: ' + result.itemsProcessed);
+					}).catch(function (err) {
+						Dashboard.hideLoadingMsg();
+						Dashboard.alert('SponsorBlock reset failed: ' + (err && err.statusText ? err.statusText : err));
+					});
 				}
 			};
 

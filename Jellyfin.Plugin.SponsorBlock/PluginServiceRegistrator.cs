@@ -1,4 +1,5 @@
 using Jellyfin.Plugin.SponsorBlock.Orchestration;
+using Jellyfin.Plugin.SponsorBlock.Reset;
 using Jellyfin.Plugin.SponsorBlock.Scoping;
 using Jellyfin.Plugin.SponsorBlock.State;
 using Jellyfin.Plugin.SponsorBlock.Triggers;
@@ -48,6 +49,14 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
 				() => Plugin.Instance!.Configuration,
 				TimeProvider.System,
 				sp.GetRequiredService<ILogger<SponsorBlockOrchestrator>>()));
+
+		serviceCollection.AddSingleton<IResetService>(sp =>
+			new ResetService(
+				sp.GetRequiredService<ILibraryManager>(),
+				sp.GetRequiredService<IMediaSegmentWriter>(),
+				sp.GetRequiredService<ISponsorBlockStateStore>(),
+				() => Plugin.Instance!.Configuration,
+				sp.GetRequiredService<ILogger<ResetService>>()));
 
 		serviceCollection.AddHostedService<ItemAddedHostedService>();
 		serviceCollection.AddHostedService<PlaybackStartHostedService>();
