@@ -9,7 +9,7 @@ namespace Jellyfin.Plugin.SponsorBlock;
 /// <summary>
 /// HTTP client for the SponsorBlock API.
 /// </summary>
-public class SponsorBlockApiClient
+public class SponsorBlockApiClient : ISponsorBlockApiClient
 {
 	private const string BaseUrl = "https://sponsor.ajay.app";
 	private readonly IHttpClientFactory _httpClientFactory;
@@ -41,33 +41,25 @@ public class SponsorBlockApiClient
 		var categoriesJson = JsonSerializer.Serialize(categories);
 		var url = $"/api/skipSegments?videoID={Uri.EscapeDataString(videoId)}&categories={Uri.EscapeDataString(categoriesJson)}&actionTypes={Uri.EscapeDataString("[\"skip\"]")}";
 
-		try
+		var httpClient = _httpClientFactory.CreateClient("SponsorBlock");
+		httpClient.BaseAddress = new Uri(BaseUrl);
+		httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("JellyfinSponsorBlock/1.0");
+
+		var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
+
+		if (response.StatusCode == HttpStatusCode.NotFound)
 		{
-			var httpClient = _httpClientFactory.CreateClient("SponsorBlock");
-			httpClient.BaseAddress = new Uri(BaseUrl);
-			httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("JellyfinSponsorBlock/1.0");
-
-			var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
-
-			if (response.StatusCode == HttpStatusCode.NotFound)
-			{
-				_logger.LogDebug("No SponsorBlock segments found for {VideoId}", videoId);
-				return [];
-			}
-
-			response.EnsureSuccessStatusCode();
-
-			var segments = await response.Content
-				.ReadFromJsonAsync<List<SponsorBlockSegment>>(cancellationToken)
-				.ConfigureAwait(false);
-
-			return segments ?? [];
-		}
-		catch (HttpRequestException ex)
-		{
-			_logger.LogWarning(ex, "Failed to fetch SponsorBlock segments for {VideoId}", videoId);
+			_logger.LogDebug("No SponsorBlock segments found for {VideoId}", videoId);
 			return [];
 		}
+
+		response.EnsureSuccessStatusCode();
+
+		var segments = await response.Content
+			.ReadFromJsonAsync<List<SponsorBlockSegment>>(cancellationToken)
+			.ConfigureAwait(false);
+
+		return segments ?? [];
 	}
 }
 
