@@ -25,6 +25,6 @@ public sealed class MediaSegmentWriter : IMediaSegmentWriter
 	public async Task CreateAsync(MediaSegmentDto segment, CancellationToken cancellationToken)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
-		await _manager.CreateSegmentAsync(segment, IMediaSegmentWriter.ProviderName).ConfigureAwait(false);
+		await _manager.CreateSegmentAsync(segment, IMediaSegmentWriter.ProviderId).ConfigureAwait(false);
 	}
 }
