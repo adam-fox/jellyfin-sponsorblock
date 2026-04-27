@@ -107,33 +107,5 @@ public class SponsorBlockSegmentProvider : IMediaSegmentProvider
 	/// <returns>List of mapped segment DTOs.</returns>
 	public static IReadOnlyList<MediaSegmentDto> MapSegments(
 		IReadOnlyList<SponsorBlockSegment> apiSegments,
-		Guid itemId)
-	{
-		var result = new List<MediaSegmentDto>();
-
-		foreach (var seg in apiSegments)
-		{
-			if (seg.ActionType != "skip" || seg.Segment.Length < 2)
-			{
-				continue;
-			}
-
-			var segmentType = CategoryMapping.ToSegmentType(seg.Category);
-			if (segmentType is null)
-			{
-				continue;
-			}
-
-			result.Add(new MediaSegmentDto
-			{
-				Id = Guid.NewGuid(),
-				ItemId = itemId,
-				Type = segmentType.Value,
-				StartTicks = (long)(seg.Segment[0] * TimeSpan.TicksPerSecond),
-				EndTicks = (long)(seg.Segment[1] * TimeSpan.TicksPerSecond),
-			});
-		}
-
-		return result;
-	}
+		Guid itemId) => SegmentMapper.Map(apiSegments, itemId);
 }
