@@ -58,6 +58,35 @@ public class PluginConfiguration : BasePluginConfiguration
 	public bool MusicOfftopic { get; set; }
 
 	/// <summary>
+	/// Gets or sets the Jellyfin library (CollectionFolder) ids the plugin should act on.
+	/// Empty array → plugin is inert (safe default for fresh install).
+	/// </summary>
+	public Guid[] EnabledLibraryIds { get; set; } = Array.Empty<Guid>();
+
+	/// <summary>
+	/// Gets or sets the local hour (0..23) at which the daily refresh task runs.
+	/// </summary>
+	public int DailyScanHour { get; set; } = 6;
+
+	/// <summary>
+	/// Gets or sets the age boundary (hours since first observed) within which Pending items
+	/// re-fetch on every PlaybackStart trigger. After this, only the daily scan touches them.
+	/// </summary>
+	public int PlaybackPollHours { get; set; } = 24;
+
+	/// <summary>
+	/// Gets or sets the age boundary (hours since first observed) at which a Pending item
+	/// is sanity-checked one last time and promoted to NoData if still empty.
+	/// </summary>
+	public int PendingSanityHours { get; set; } = 48;
+
+	/// <summary>
+	/// Gets or sets the inter-request delay (milliseconds) used by the daily refresh task
+	/// to avoid spiking the public SponsorBlock API.
+	/// </summary>
+	public int RequestDelayMilliseconds { get; set; } = 200;
+
+	/// <summary>
 	/// Returns a dictionary of category name to enabled for use with the API.
 	/// </summary>
 	/// <returns>Category settings dictionary.</returns>
