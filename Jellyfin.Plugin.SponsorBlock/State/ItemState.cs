@@ -1,0 +1,16 @@
+namespace Jellyfin.Plugin.SponsorBlock.State;
+
+/// <summary>
+/// Per-item lifecycle state for SponsorBlock fetching.
+/// </summary>
+public enum ItemState
+{
+	/// <summary>Fetched at least once, no segments yet, still inside the sanity window.</summary>
+	Pending = 0,
+
+	/// <summary>Has at least one segment from a successful fetch.</summary>
+	HasData = 1,
+
+	/// <summary>Sanity-checked at ≥ PendingSanityHours and still empty. Permanently skipped.</summary>
+	NoData = 2,
+}
