@@ -7,6 +7,14 @@
 		"owner": "felixfoertsch",
 		"versions": [
 			{
+				"version": "1.1.2.0",
+				"changelog": "Fix segments not reaching clients. v1.1.0.0 dropped the IMediaSegmentProvider registration to avoid the slow scan, but Jellyfin filters segments by registered provider, so stored segments were never served. Re-register a stub provider (Supports => false, GetMediaSegments => empty) so Jellyfin recognizes 'SponsorBlock' as a known provider while the orchestrator stays in charge of fetching.",
+				"targetAbi": "10.11.0.0",
+				"sourceUrl": "https://github.com/felixfoertsch/jellyfin-sponsorblock/releases/download/v1.1.2.0/jellyfin-plugin-sponsorblock-1.1.2.0.zip",
+				"checksum": "576e9f2943b44d8690f6dfb0c6a8777a",
+				"timestamp": "2026-04-27T00:00:00Z"
+			},
+			{
 				"version": "1.1.1.0",
 				"changelog": "Add admin Reset button on the plugin config page that wipes SponsorBlock state and owned segments for items in the configured library scope, so the orchestrator re-fetches on next playback. Useful for re-fetching items whose SponsorBlock data became available after the initial scan.",
 				"targetAbi": "10.11.0.0",

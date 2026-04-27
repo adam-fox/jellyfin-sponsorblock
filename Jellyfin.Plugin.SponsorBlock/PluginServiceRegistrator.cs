@@ -6,6 +6,7 @@ using Jellyfin.Plugin.SponsorBlock.Triggers;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.MediaSegments;
 using MediaBrowser.Controller.Plugins;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +24,10 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
 	{
 		serviceCollection.AddSingleton<SponsorBlockApiClient>();
 		serviceCollection.AddSingleton<ISponsorBlockApiClient>(sp => sp.GetRequiredService<SponsorBlockApiClient>());
+
+		// Register a stub media-segment provider so Jellyfin recognizes "SponsorBlock" as a known
+		// provider and serves stored segments to clients. Actual fetching happens in the orchestrator.
+		serviceCollection.AddSingleton<IMediaSegmentProvider, SponsorBlockSegmentProvider>();
 
 		serviceCollection.AddSingleton<ISponsorBlockStateStore>(sp =>
 		{
