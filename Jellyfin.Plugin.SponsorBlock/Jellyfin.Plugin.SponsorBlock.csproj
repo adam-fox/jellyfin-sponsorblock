@@ -12,6 +12,9 @@
 		<PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
 	</ItemGroup>
 	<ItemGroup>
+		<InternalsVisibleTo Include="Jellyfin.Plugin.SponsorBlock.Tests" />
+	</ItemGroup>
+	<ItemGroup>
 		<None Remove="Configuration\configPage.html" />
 		<EmbeddedResource Include="Configuration\configPage.html" />
 	</ItemGroup>
