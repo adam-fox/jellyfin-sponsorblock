@@ -127,7 +127,7 @@ public sealed class SponsorBlockOrchestrator
 		if (existing is { State: ItemState.Pending } && reason == ProcessReason.PlaybackStart)
 		{
 			var ageHours = (now - existing.FirstSeenAt).TotalHours;
-			if (ageHours >= config.PlaybackPollHours)
+			if (ageHours < config.PlaybackPollHours)
 			{
 				return;
 			}

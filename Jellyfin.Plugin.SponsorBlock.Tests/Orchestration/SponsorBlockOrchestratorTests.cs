@@ -81,11 +81,25 @@ public class SponsorBlockOrchestratorTests
 	}
 
 	[Fact]
-	public async Task Pending_PlaybackStart_WithinPollWindow_RefetchesAndPromotesOnSegments()
+	public async Task Pending_PlaybackStart_WithinPollWindow_DoesNothing()
 	{
 		var item = FakeItem(Guid.NewGuid());
 		_scope.IsInScope(item).Returns(true);
 		var existing = NewRow(item.Id, ItemState.Pending, firstSeen: T0.AddHours(-12));
+		_store.GetAsync(item.Id, Arg.Any<CancellationToken>()).Returns(existing);
+
+		await MakeOrchestrator().ProcessAsync(item, ProcessReason.PlaybackStart, CancellationToken.None);
+
+		await _api.DidNotReceive().GetSegmentsAsync(Arg.Any<string>(), Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>());
+		await _store.DidNotReceive().UpsertAsync(Arg.Any<ItemStateRow>(), Arg.Any<CancellationToken>());
+	}
+
+	[Fact]
+	public async Task Pending_PlaybackStart_OutsidePollWindow_RefetchesAndPromotesOnSegments()
+	{
+		var item = FakeItem(Guid.NewGuid());
+		_scope.IsInScope(item).Returns(true);
+		var existing = NewRow(item.Id, ItemState.Pending, firstSeen: T0.AddHours(-30));
 		_store.GetAsync(item.Id, Arg.Any<CancellationToken>()).Returns(existing);
 		_api.GetSegmentsAsync(Arg.Any<string>(), Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>())
 			.Returns(new List<SponsorBlockSegment> { Seg() });
@@ -95,20 +109,6 @@ public class SponsorBlockOrchestratorTests
 		await _store.Received().UpsertAsync(
 			Arg.Is<ItemStateRow>(r => r.State == ItemState.HasData && r.SegmentCount == 1),
 			Arg.Any<CancellationToken>());
-	}
-
-	[Fact]
-	public async Task Pending_PlaybackStart_OutsidePollWindow_DoesNothing()
-	{
-		var item = FakeItem(Guid.NewGuid());
-		_scope.IsInScope(item).Returns(true);
-		var existing = NewRow(item.Id, ItemState.Pending, firstSeen: T0.AddHours(-30));
-		_store.GetAsync(item.Id, Arg.Any<CancellationToken>()).Returns(existing);
-
-		await MakeOrchestrator().ProcessAsync(item, ProcessReason.PlaybackStart, CancellationToken.None);
-
-		await _api.DidNotReceive().GetSegmentsAsync(Arg.Any<string>(), Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>());
-		await _store.DidNotReceive().UpsertAsync(Arg.Any<ItemStateRow>(), Arg.Any<CancellationToken>());
 	}
 
 	[Fact]

@@ -51,16 +51,15 @@ public sealed class PlaybackStartHostedService : IHostedService
 			return;
 		}
 
-		_ = Task.Run(async () =>
+		try
 		{
-			try
-			{
-				await _orchestrator.ProcessAsync(video, ProcessReason.PlaybackStart, CancellationToken.None).ConfigureAwait(false);
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex, "SponsorBlock orchestrator failed for played item {ItemId}", video.Id);
-			}
-		});
+			_orchestrator.ProcessAsync(video, ProcessReason.PlaybackStart, CancellationToken.None)
+				.GetAwaiter()
+				.GetResult();
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, "SponsorBlock orchestrator failed for played item {ItemId}", video.Id);
+		}
 	}
 }

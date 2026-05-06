@@ -2,12 +2,14 @@ using Jellyfin.Plugin.SponsorBlock.Orchestration;
 using Jellyfin.Plugin.SponsorBlock.Reset;
 using Jellyfin.Plugin.SponsorBlock.Scoping;
 using Jellyfin.Plugin.SponsorBlock.State;
+using Jellyfin.Plugin.SponsorBlock.Tasks;
 using Jellyfin.Plugin.SponsorBlock.Triggers;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.MediaSegments;
 using MediaBrowser.Controller.Plugins;
+using MediaBrowser.Model.Tasks;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -66,5 +68,6 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
 		serviceCollection.AddHostedService<ItemAddedHostedService>();
 		serviceCollection.AddHostedService<PlaybackStartHostedService>();
 		serviceCollection.AddHostedService<ItemRemovedHostedService>();
+		serviceCollection.AddSingleton<IScheduledTask, SponsorBlockRefreshTask>();
 	}
 }

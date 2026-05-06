@@ -77,7 +77,7 @@ Stored states (one row per item in SQLite):
 | Current row state | Trigger | Action |
 |---|---|---|
 | (no row) | any | Insert `first_seen_at=now`, fetch, persist as `Pending` or `HasData` |
-| `Pending` | `PlaybackStart` | If `now - first_seen_at < playbackPollHours` (default 24h): fetch; promote to `HasData` if segments returned. Otherwise no-op (wait for sanity). |
+| `Pending` | `PlaybackStart` | If `now - first_seen_at >= playbackPollHours` (default 24h): fetch; promote to `HasData` if segments returned. Otherwise no-op. |
 | `Pending` | `DailyScan` | If `now - first_seen_at >= sanityHours` (default 48h): sanity scan → `HasData` or `NoData`. Else: opportunistic fetch (same code path, stays `Pending` if empty). |
 | `Pending` | `ItemAdded` | Shouldn't happen (no row → row insert covers ItemAdded). Log warning, treat as new. |
 | `HasData` | `DailyScan` | Refresh: `DeleteSegments` + `CreateSegment` per new segment + update `last_fetch_at` |
@@ -87,7 +87,7 @@ Stored states (one row per item in SQLite):
 
 ### Rationale
 
-- `Pending` items poll on every play **for the first `playbackPollHours` (default 24h)** after `first_seen_at`. After that, only the daily scan touches them, leading to the 48h sanity check.
+- `Pending` items get one playback-triggered retry after `playbackPollHours` (default 24h), when SponsorBlock data should have converged. The daily scan also touches them, leading to the 48h sanity check.
 - `HasData` items don't get hammered on every play.
 - `NoData` items are dead weight after one final sanity check.
 - The 48h grace covers the user's stated assumption that SponsorBlock data has converged ~24h after release with safety margin.
