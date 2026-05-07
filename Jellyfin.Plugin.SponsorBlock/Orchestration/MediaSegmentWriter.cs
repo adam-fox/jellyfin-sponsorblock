@@ -22,6 +22,9 @@ public sealed class MediaSegmentWriter : IMediaSegmentWriter
 		=> _manager.DeleteSegmentsAsync(itemId, cancellationToken);
 
 	/// <inheritdoc />
+	public bool HasAny(Guid itemId) => _manager.HasSegments(itemId);
+
+	/// <inheritdoc />
 	public async Task CreateAsync(MediaSegmentDto segment, CancellationToken cancellationToken)
 	{
 		cancellationToken.ThrowIfCancellationRequested();

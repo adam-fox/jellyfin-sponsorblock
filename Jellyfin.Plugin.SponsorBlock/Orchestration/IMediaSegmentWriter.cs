@@ -36,6 +36,11 @@ public interface IMediaSegmentWriter
 	/// <param name="cancellationToken">Cancellation token.</param>
 	Task DeleteOwnedAsync(Guid itemId, CancellationToken cancellationToken);
 
+	/// <summary>Checks whether Jellyfin still has any media segments stored for an item.</summary>
+	/// <param name="itemId">The Jellyfin item id.</param>
+	/// <returns><c>true</c> when Jellyfin has at least one segment row for the item.</returns>
+	bool HasAny(Guid itemId);
+
 	/// <summary>Persists a single SponsorBlock segment.</summary>
 	/// <param name="segment">The segment DTO to persist.</param>
 	/// <param name="cancellationToken">Cancellation token (advisory; the underlying API does not accept one).</param>

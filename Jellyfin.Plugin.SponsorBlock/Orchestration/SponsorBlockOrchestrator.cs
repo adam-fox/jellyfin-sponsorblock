@@ -117,7 +117,7 @@ public sealed class SponsorBlockOrchestrator
 			return;
 		}
 
-		if (existing is { State: ItemState.HasData } && reason == ProcessReason.PlaybackStart)
+		if (existing is { State: ItemState.HasData } && reason == ProcessReason.PlaybackStart && _writer.HasAny(itemId))
 		{
 			return;
 		}

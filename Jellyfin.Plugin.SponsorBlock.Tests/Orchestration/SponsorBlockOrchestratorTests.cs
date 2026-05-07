@@ -154,11 +154,32 @@ public class SponsorBlockOrchestratorTests
 		_scope.IsInScope(item).Returns(true);
 		_store.GetAsync(item.Id, Arg.Any<CancellationToken>())
 			.Returns(NewRow(item.Id, ItemState.HasData, segmentCount: 2));
+		_writer.HasAny(item.Id).Returns(true);
 
 		await MakeOrchestrator().ProcessAsync(item, ProcessReason.PlaybackStart, CancellationToken.None);
 
 		await _api.DidNotReceive().GetSegmentsAsync(Arg.Any<string>(), Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>());
 		await _store.DidNotReceive().UpsertAsync(Arg.Any<ItemStateRow>(), Arg.Any<CancellationToken>());
+	}
+
+	[Fact]
+	public async Task HasData_PlaybackStart_WhenJellyfinRowsWerePruned_RefetchesAndRecreatesSegments()
+	{
+		var item = FakeItem(Guid.NewGuid());
+		_scope.IsInScope(item).Returns(true);
+		_store.GetAsync(item.Id, Arg.Any<CancellationToken>())
+			.Returns(NewRow(item.Id, ItemState.HasData, segmentCount: 3));
+		_writer.HasAny(item.Id).Returns(false);
+		_api.GetSegmentsAsync(Arg.Any<string>(), Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>())
+			.Returns(new List<SponsorBlockSegment> { Seg(), Seg("intro"), Seg("outro") });
+
+		await MakeOrchestrator().ProcessAsync(item, ProcessReason.PlaybackStart, CancellationToken.None);
+
+		await _writer.Received(1).DeleteOwnedAsync(item.Id, Arg.Any<CancellationToken>());
+		await _writer.Received(3).CreateAsync(Arg.Any<MediaSegmentDto>(), Arg.Any<CancellationToken>());
+		await _store.Received().UpsertAsync(
+			Arg.Is<ItemStateRow>(r => r.State == ItemState.HasData && r.SegmentCount == 3),
+			Arg.Any<CancellationToken>());
 	}
 
 	[Fact]
