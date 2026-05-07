@@ -7,6 +7,14 @@
 		"owner": "felixfoertsch",
 		"versions": [
 			{
+				"version": "1.1.5.0",
+				"changelog": "Repair pruned SponsorBlock segments on playback. When Jellyfin refreshes a changed media file it can delete generated MediaSegment rows while the plugin state still says HasData; playback start now verifies that Jellyfin still has segment rows and re-fetches/recreates them if they were pruned.",
+				"targetAbi": "10.11.0.0",
+				"sourceUrl": "https://github.com/felixfoertsch/jellyfin-sponsorblock/releases/download/v1.1.5.0/jellyfin-plugin-sponsorblock-1.1.5.0.zip",
+				"checksum": "19f5156f72e2561f385632dce5010f5f",
+				"timestamp": "2026-05-07T00:00:00Z"
+			},
+			{
 				"version": "1.1.4.0",
 				"changelog": "Fix delayed SponsorBlock loading. Register the daily refresh scheduled task so Pending items are retried automatically, correct the 24-hour playback retry condition, and wait for playback-start processing so freshly fetched segments can reach the first playback session.",
 				"targetAbi": "10.11.0.0",
