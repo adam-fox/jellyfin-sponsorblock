@@ -1,5 +1,6 @@
 using Jellyfin.Plugin.SponsorBlock.Orchestration;
 using Jellyfin.Plugin.SponsorBlock.Reset;
+using Jellyfin.Plugin.SponsorBlock.Scanning;
 using Jellyfin.Plugin.SponsorBlock.Scoping;
 using Jellyfin.Plugin.SponsorBlock.State;
 using Jellyfin.Plugin.SponsorBlock.Tasks;
@@ -64,6 +65,12 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
 				sp.GetRequiredService<ISponsorBlockStateStore>(),
 				() => Plugin.Instance!.Configuration,
 				sp.GetRequiredService<ILogger<ResetService>>()));
+		serviceCollection.AddSingleton<IForceScanService>(sp =>
+			new ForceScanService(
+				sp.GetRequiredService<ILibraryManager>(),
+				sp.GetRequiredService<SponsorBlockOrchestrator>(),
+				() => Plugin.Instance!.Configuration,
+				sp.GetRequiredService<ILogger<ForceScanService>>()));
 
 		serviceCollection.AddHostedService<ItemAddedHostedService>();
 		serviceCollection.AddHostedService<PlaybackStartHostedService>();

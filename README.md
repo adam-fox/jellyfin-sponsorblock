@@ -24,24 +24,40 @@ Works great with [TubeArchivist](https://www.tubearchivist.com/) (which names fi
 ### Manual installation
 
 1. Download `Jellyfin.Plugin.SponsorBlock.dll` from the [latest release](https://github.com/felixfoertsch/jellyfin-sponsorblock/releases)
-2. Place it in `<jellyfin-data>/plugins/SponsorBlock_1.0.0.0/`
+2. Place it in `<jellyfin-data>/plugins/SponsorBlock_<version>/` (e.g., `SponsorBlock_1.1.6.0`)
 3. Restart Jellyfin
 
 ## Setup
 
-1. Go to **Dashboard → Plugins → SponsorBlock** and configure which categories to skip
-2. Enable the **SponsorBlock** provider in your YouTube library: **Library → Manage Library → Media Segment Providers**
-3. Run **Dashboard → Scheduled Tasks → Media Segment Scan**
-4. Configure skip behavior per user in the plugin settings, or have each user set it in **Settings → Playback → Media Segments**
+1. Open **Dashboard → Plugins → SponsorBlock**
+2. Under **Libraries**, tick the YouTube library (or libraries) the plugin should act on. **Until you select at least one library, the plugin does nothing.**
+3. Pick the categories you want to skip
+4. Save
+
+That's it for new videos — the plugin reacts to library and playback events automatically.
+For an existing archive, use **Force scan all selected libraries** once on the plugin config page.
+
+Each viewer can still tune skip vs. ask-to-skip behavior in **Settings → Playback → Media Segments** on their own device (Jellyfin stores that preference in the browser's local storage).
 
 ## How it works
 
-When Jellyfin runs a Media Segment Scan, the plugin:
+The plugin is event-driven for normal operation.
 
-1. Extracts the YouTube video ID from each file's name
-2. Queries the [SponsorBlock API](https://sponsor.ajay.app/) for skip segments
-3. Maps them to Jellyfin Media Segment types
-4. Jellyfin stores the segments and players auto-skip or show a skip button during playback
+| Trigger | What happens |
+|---|---|
+| **Item added** to a scoped library | Fetch SponsorBlock data once, immediately. |
+| **Playback starts** on a scoped item | If the item still has no data after 24h (since first seen), re-fetch before playback continues. |
+| **Daily refresh task** (06:00 by default) | Re-fetch every tracked item to pick up newly-submitted segments. Performs the 48h sanity check. |
+| **Force scan all** | One-shot backfill for existing archives. Walks every video in selected libraries once. |
+| **Item removed** | Drop the item's state row and any segments owned by this plugin. |
+
+Every item passes through a small state machine stored in SQLite:
+
+- **Pending** — fetched at least once, no segments returned yet. Re-fetched on playback after the first 24h, and at the daily refresh.
+- **HasData** — segments are stored. The daily refresh keeps them current.
+- **NoData** — at the 48h mark, an item that has produced nothing is permanently shelved. It won't be re-fetched again, ever.
+
+This model assumes SponsorBlock data converges within ~24h of a video being released. Items uploaded mid-day still get a real shot at picking up segments by the time you actually watch them.
 
 ## File matching
 
@@ -67,9 +83,30 @@ SponsorBlock has more category types than Jellyfin supports. The mapping:
 | Filler | Commercial | disabled |
 | Non-Music (in music videos) | Commercial | disabled |
 
-## User segment actions
+## Advanced configuration
 
-The plugin settings page includes an admin panel to manage how each user's player handles segments. You can batch-apply "Default", "Ask to Skip", or "Auto Skip" to all users at once.
+Defaults are sensible — most users never need to touch these.
+
+| Setting | Default | What it does |
+|---|---|---|
+| Daily scan hour | `6` | Local hour (0–23) the daily refresh task fires. |
+| Playback re-fetch window (h) | `24` | How long after first seeing an item to keep re-fetching on every playback. |
+| Sanity-check window (h) | `48` | After this long with no data, the item is permanently shelved as `NoData`. |
+| Daily-scan request delay (ms) | `200` | Inter-request pause during the daily refresh to be a good citizen of the public SponsorBlock API. |
+
+## Force scan
+
+The plugin config page has a **Force scan all selected libraries** button. Use it once after enabling the plugin for an existing archive. It starts a background scan over all selected-library videos, creates tracking rows, and lets the normal 48h state machine decide whether each item has SponsorBlock data.
+
+The endpoint is `POST /Plugins/SponsorBlock/ScanAll` (admin only). The current status is available at `GET /Plugins/SponsorBlock/ScanAll`.
+
+## Reset
+
+The plugin config page has a **Reset** button that wipes the SponsorBlock state and removes every segment owned by this plugin for items in the configured libraries. The next playback (or the next daily refresh) re-fetches from scratch.
+
+Use this when you suspect SponsorBlock now has data for items that the plugin previously decided didn't have any (e.g., older items that were marked `NoData` before the community submitted segments for them).
+
+The endpoint is `POST /Plugins/SponsorBlock/Reset` (admin only).
 
 ## Building from source
 

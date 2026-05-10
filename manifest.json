@@ -7,6 +7,14 @@
 		"owner": "felixfoertsch",
 		"versions": [
 			{
+				"version": "1.1.6.0",
+				"changelog": "Add a one-shot Force Scan button for existing archives. Admins can backfill every video in the selected libraries once, while the normal daily refresh stays limited to tracked Pending and HasData items. Includes duplicate-scan protection and status endpoints.",
+				"targetAbi": "10.11.0.0",
+				"sourceUrl": "https://github.com/felixfoertsch/jellyfin-sponsorblock/releases/download/v1.1.6.0/jellyfin-plugin-sponsorblock-1.1.6.0.zip",
+				"checksum": "b5ef485ce8c527c2ab9d9c248218c72c",
+				"timestamp": "2026-05-10T00:00:00Z"
+			},
+			{
 				"version": "1.1.5.0",
 				"changelog": "Repair pruned SponsorBlock segments on playback. When Jellyfin refreshes a changed media file it can delete generated MediaSegment rows while the plugin state still says HasData; playback start now verifies that Jellyfin still has segment rows and re-fetches/recreates them if they were pruned.",
 				"targetAbi": "10.11.0.0",

@@ -140,6 +140,19 @@
 				</div>
 
 				<div class="verticalSection" style="margin-top: 2em;">
+					<h3>Force scan</h3>
+					<div class="fieldDescription" style="margin-bottom: 0.5em;">
+						Scans every video in the selected libraries once. Use this after enabling the plugin
+						for an existing archive. The daily refresh keeps checking only tracked pending items
+						until they either get SponsorBlock data or age out.
+					</div>
+					<button is="emby-button" type="button" class="raised block emby-button"
+						onclick="SponsorBlockConfig.forceScanAll()">
+						<span>Force scan all selected libraries</span>
+					</button>
+				</div>
+
+				<div class="verticalSection" style="margin-top: 2em;">
 					<h3>Reset</h3>
 					<div class="fieldDescription" style="margin-bottom: 0.5em;">
 						Wipes the SponsorBlock state and removes all media segments owned by this plugin
@@ -269,6 +282,28 @@
 					}).catch(function (err) {
 						Dashboard.hideLoadingMsg();
 						Dashboard.alert('SponsorBlock reset failed: ' + (err && err.statusText ? err.statusText : err));
+					});
+				},
+
+				forceScanAll: function () {
+					Dashboard.showLoadingMsg();
+					ApiClient.ajax({
+						type: 'POST',
+						url: ApiClient.getUrl('Plugins/SponsorBlock/ScanAll'),
+						contentType: 'application/json'
+					}).then(function (response) {
+						return response.json();
+					}).then(function (result) {
+						Dashboard.hideLoadingMsg();
+						if (result.alreadyRunning) {
+							Dashboard.alert('SponsorBlock force scan is already running.');
+							return;
+						}
+
+						Dashboard.alert('SponsorBlock force scan started. Progress is written to the Jellyfin server log.');
+					}).catch(function (err) {
+						Dashboard.hideLoadingMsg();
+						Dashboard.alert('SponsorBlock force scan failed to start: ' + (err && err.statusText ? err.statusText : err));
 					});
 				}
 			};

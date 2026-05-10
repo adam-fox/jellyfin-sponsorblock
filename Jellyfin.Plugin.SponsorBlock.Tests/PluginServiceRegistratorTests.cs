@@ -1,3 +1,4 @@
+using Jellyfin.Plugin.SponsorBlock.Scanning;
 using Jellyfin.Plugin.SponsorBlock.Tasks;
 using MediaBrowser.Controller;
 using MediaBrowser.Model.Tasks;
@@ -18,5 +19,17 @@ public class PluginServiceRegistratorTests
 		Assert.Contains(services, descriptor =>
 			descriptor.ServiceType == typeof(IScheduledTask)
 			&& descriptor.ImplementationType == typeof(SponsorBlockRefreshTask));
+	}
+
+	[Fact]
+	public void RegisterServices_RegistersForceScanService()
+	{
+		var services = new ServiceCollection();
+
+		new PluginServiceRegistrator().RegisterServices(services, Substitute.For<IServerApplicationHost>());
+
+		Assert.Contains(services, descriptor =>
+			descriptor.ServiceType == typeof(IForceScanService)
+			&& descriptor.Lifetime == ServiceLifetime.Singleton);
 	}
 }

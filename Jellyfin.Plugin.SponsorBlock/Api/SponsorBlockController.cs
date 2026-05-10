@@ -1,4 +1,5 @@
 using Jellyfin.Plugin.SponsorBlock.Reset;
+using Jellyfin.Plugin.SponsorBlock.Scanning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,12 +15,37 @@ namespace Jellyfin.Plugin.SponsorBlock.Api;
 public sealed class SponsorBlockController : ControllerBase
 {
 	private readonly IResetService _resetService;
+	private readonly IForceScanService _forceScanService;
 
 	/// <summary>Initializes the controller.</summary>
 	/// <param name="resetService">Reset orchestrator.</param>
-	public SponsorBlockController(IResetService resetService)
+	/// <param name="forceScanService">Full-library scan starter.</param>
+	public SponsorBlockController(IResetService resetService, IForceScanService forceScanService)
 	{
 		_resetService = resetService;
+		_forceScanService = forceScanService;
+	}
+
+	/// <summary>
+	/// Starts a one-shot SponsorBlock scan for every video in the configured library scope.
+	/// </summary>
+	/// <returns>Whether a scan was started, plus current scan status.</returns>
+	[HttpPost("ScanAll")]
+	[ProducesResponseType(StatusCodes.Status200OK)]
+	public ActionResult<ForceScanStartResponse> ScanAll()
+	{
+		return _forceScanService.StartScanAll();
+	}
+
+	/// <summary>
+	/// Returns the current one-shot full scan status.
+	/// </summary>
+	/// <returns>Current force-scan status.</returns>
+	[HttpGet("ScanAll")]
+	[ProducesResponseType(StatusCodes.Status200OK)]
+	public ActionResult<ForceScanStatus> GetScanAllStatus()
+	{
+		return _forceScanService.GetStatus();
 	}
 
 	/// <summary>
