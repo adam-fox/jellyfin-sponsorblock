@@ -7,10 +7,10 @@
 		"owner": "felixfoertsch",
 		"versions": [
 			{
-				"version": "1.1.6.1-adam",
+				"version": "1.1.6.1",
 				"changelog": "Fix force scan filter excluding Episode and Movie item kinds. Broaden IncludeItemTypes to include Episode and Movie alongside Video so library backfills cover all relevant media.",
 				"targetAbi": "10.11.0.0",
-				"sourceUrl": "https://github.com/adam-fox/jellyfin-sponsorblock/releases/download/v1.1.6.1-adam/jellyfin-plugin-sponsorblock-1.1.6.1-adam.zip",
+				"sourceUrl": "https://github.com/adam-fox/jellyfin-sponsorblock/releases/download/v1.1.6.1/jellyfin-plugin-sponsorblock-1.1.6.1.zip",
 				"checksum": "",
 				"timestamp": "2026-05-18T00:00:00Z"
 			},
