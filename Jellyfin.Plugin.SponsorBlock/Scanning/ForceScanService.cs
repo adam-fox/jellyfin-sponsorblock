@@ -133,7 +133,7 @@ public sealed class ForceScanService : IForceScanService
 		var query = new InternalItemsQuery
 		{
 			AncestorIds = enabled,
-			IncludeItemTypes = [BaseItemKind.Video],
+			IncludeItemTypes = [BaseItemKind.Video, BaseItemKind.Episode, BaseItemKind.Movie],
 			IsVirtualItem = false,
 			Recursive = true,
 		};
